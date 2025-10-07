@@ -1,7 +1,10 @@
 using System;
 using System.Collections.Generic;
+
 using JOIEnergy.Enums;
+using JOIEnergy.Repositories;
 using JOIEnergy.Services;
+
 using Xunit;
 
 namespace JOIEnergy.Tests
@@ -15,10 +18,8 @@ namespace JOIEnergy.Tests
 
         public AccountServiceTest()
         {
-            var smartMeterToPricePlanAccounts = new Dictionary<string, string>();
-            smartMeterToPricePlanAccounts.Add(SMART_METER_ID, PRICE_PLAN_ID);
-
-            accountService = new AccountService(smartMeterToPricePlanAccounts);
+            var accountRepository = new TestAccountRepository();
+            accountService = new AccountService(accountRepository);
         }
 
         [Fact]
@@ -35,5 +36,29 @@ namespace JOIEnergy.Tests
             Assert.Null(result);
         }
 
+        private class TestAccountRepository : IAccountRepository
+        {
+            private readonly Dictionary<string, string> _smartMeterToPricePlan;
+
+            public TestAccountRepository()
+            {
+                _smartMeterToPricePlan = new Dictionary<string, string>
+                {
+                    { SMART_METER_ID, PRICE_PLAN_ID }
+                };
+            }
+
+            public string GetPricePlanForSmartMeter(string smartMeterId)
+            {
+                return _smartMeterToPricePlan.TryGetValue(smartMeterId, out var pricePlanId)
+                    ? pricePlanId
+                    : null;
+            }
+
+            public Dictionary<string, string> GetAllMeterToPricePlanMappings()
+            {
+                return _smartMeterToPricePlan;
+            }
+        }
     }
 }

@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+
 using JOIEnergy.Domain;
+using JOIEnergy.Repositories;
 
 namespace JOIEnergy.Services
 {
@@ -9,13 +11,13 @@ namespace JOIEnergy.Services
     {
         public interface Debug { void Log(string s); };
 
-        private readonly List<PricePlan> _pricePlans;
+        private readonly IPricePlanRepository _pricePlanRepository;
         private IMeterReadingService _meterReadingService;
         private IAccountService _accountService;
 
-        public PricePlanService(List<PricePlan> pricePlan, IMeterReadingService meterReadingService, IAccountService accountService)
+        public PricePlanService(IPricePlanRepository pricePlanRepository, IMeterReadingService meterReadingService, IAccountService accountService)
         {
-            _pricePlans = pricePlan;
+            _pricePlanRepository = pricePlanRepository;
             _meterReadingService = meterReadingService;
             _accountService = accountService;
         }
@@ -50,7 +52,9 @@ namespace JOIEnergy.Services
             {
                 return new Dictionary<string, decimal>();
             }
-            return _pricePlans.ToDictionary(plan => plan.PlanName, plan => calculateCost(electricityReadings, plan));
+
+            var pricePlans = _pricePlanRepository.GetAll();
+            return pricePlans.ToDictionary(plan => plan.PlanName, plan => calculateCost(electricityReadings, plan));
         }
 
         public decimal GetConsumptionCostOfLastWeekElectricityReadingsForEachPricePlan(string smartMeterId)
@@ -63,7 +67,7 @@ namespace JOIEnergy.Services
             }
 
             var pricePlanId = _accountService.GetPricePlanIdForSmartMeterId(smartMeterId);
-            var pricePlan = _pricePlans.FirstOrDefault(p => p.PlanName == pricePlanId);
+            var pricePlan = _pricePlanRepository.GetById(pricePlanId);
 
             return calculateCost(electricityReadings, pricePlan);
             
